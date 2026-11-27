@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { open } from 'node:fs/promises'
 import { readJson } from './relay-demo.mjs'
 
@@ -27,6 +27,12 @@ function reply(res, status, message) {
   res.end(JSON.stringify({ success: false, message }))
 }
 
+function auditSetup(res, outcome) {
+  const requestId = randomUUID()
+  res.setHeader('x-relay-request-id', requestId)
+  console.info(JSON.stringify({ event: 'relay.owner_setup', outcome, requestId, at: new Date().toISOString() }))
+}
+
 export function ownerSetup({ origin, approvalFile, isInitialized, initialize }) {
   let initializing = false
   return async (req, res) => {
@@ -42,6 +48,7 @@ export function ownerSetup({ origin, approvalFile, isInitialized, initialize }) 
     const isRead = req.method === 'GET' || req.method === 'HEAD'
     if (isInitialized()) {
       if ((!isRead && path === '/api/setup') || path === '/activate-setup' || path === '/api/user/register') {
+        if (req.method === 'POST' && path === '/api/setup') auditSetup(res, 'already_initialized')
         reply(res, 404, 'Not found')
         return true
       }
@@ -68,14 +75,17 @@ export function ownerSetup({ origin, approvalFile, isInitialized, initialize }) 
     }
     if (req.method === 'POST' && req.url === '/api/setup') {
       if (!approved || req.headers.origin !== origin) {
+        auditSetup(res, approved ? 'origin_mismatch' : 'browser_not_approved')
         reply(res, 403, '请先从 /activate-setup 确认此浏览器。')
         return true
       }
       if (initializing) {
+        auditSetup(res, 'initialization_in_progress')
         reply(res, 409, 'Setup in progress')
         return true
       }
       if (req.headers['content-type']?.split(';')[0] !== 'application/json') {
+        auditSetup(res, 'invalid_content_type')
         reply(res, 415, 'JSON required')
         return true
       }
@@ -83,10 +93,17 @@ export function ownerSetup({ origin, approvalFile, isInitialized, initialize }) 
       try {
         let body
         try { body = await readJson(req, setupBodyLimit) } catch {
+          auditSetup(res, 'invalid_request')
           reply(res, 400, 'Invalid setup request')
           return true
         }
-        const { status, data } = await initialize(body)
+        let result
+        try { result = await initialize(body) } catch (error) {
+          auditSetup(res, 'initialization_error')
+          throw error
+        }
+        const { status, data } = result
+        auditSetup(res, status === 200 && data?.success === true ? 'administrator_created' : 'initialization_refused')
         res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
         res.end(JSON.stringify(data))
       } finally {

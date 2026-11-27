@@ -50,7 +50,8 @@ jobs:
           export RELAY_CONSOLE_PREVIEW=1
           export RELAY_CONSOLE_PREVIEW_ORIGIN="https://console.example.test"
           export PREVIEW_TEST_URL="http://127.0.0.1:9129"
-          node relay-console.mjs &
+          export PREVIEW_TEST_AUDIT_LOG="$RELAY_CONSOLE_STATE/setup-test.log"
+          node relay-console.mjs >"$PREVIEW_TEST_AUDIT_LOG" &
           console=$!
           trap 'kill "$console" 2>/dev/null || true; wait "$console" 2>/dev/null || true' EXIT
           curl --retry 45 --retry-connrefused --retry-delay 1 --fail --silent --show-error "$PREVIEW_TEST_URL/api/setup" >/dev/null

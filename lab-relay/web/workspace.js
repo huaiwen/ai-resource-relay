@@ -155,13 +155,13 @@ function showEditor(action, member) {
   for (const [id, active] of Object.entries(fields)) {
     const field = byId(id)
     field.hidden = !active
-    field.querySelector('input, select').required = active
+    const control = field.querySelector('input, select')
+    control.disabled = !active
+    control.required = active
   }
   editForm.elements.group.replaceChildren(...state.labs.map(lab => new Option(lab.name, lab.id)))
-  if (member) {
-    editForm.elements.group.value = member.group
-    editForm.elements.balance.value = member.balance
-  }
+  if (action === 'assignLab') editForm.elements.group.value = member.group
+  if (action === 'setQuota') editForm.elements.balance.value = member.balance
   put('editor-error', '')
   editor.showModal()
 }
