@@ -84,14 +84,26 @@ function fixture(key) {
         const text = body.messages?.at(-1)?.content
         if (typeof text !== 'string') return json(res, 400, { error: 'missing prompt' })
         const size = [...text].length
+        const meta = { id: `chatcmpl-${randomUUID()}`, created: Math.floor(Date.now() / 1000), model: chat.name }
+        const content = `已收到 ${size} 个字符。New API 已将请求转发到对话演示渠道，并将响应返回到此页面。此回复由本地模拟服务生成。`
+        const promptTokens = Math.max(1, Math.ceil(size / 4))
+        const usage = { prompt_tokens: promptTokens, completion_tokens: 23, total_tokens: promptTokens + 23 }
+        if (body.stream === true) {
+          res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store' })
+          const chunk = (choices, extra = {}) => res.write(`data: ${JSON.stringify({
+            ...meta, object: 'chat.completion.chunk', choices, ...extra,
+          })}\n\n`)
+          chunk([{ index: 0, delta: { role: 'assistant', content }, finish_reason: null }])
+          chunk([{ index: 0, delta: {}, finish_reason: 'stop' }])
+          if (body.stream_options?.include_usage === true) chunk([], { usage })
+          return res.end('data: [DONE]\n\n')
+        }
         return json(res, 200, {
-          id: `chatcmpl-${randomUUID()}`, object: 'chat.completion', model: chat.name,
-          created: Math.floor(Date.now() / 1000),
+          ...meta, object: 'chat.completion',
           choices: [{ index: 0, finish_reason: 'stop', message: {
-            role: 'assistant', content: `已收到 ${size} 个字符。New API 已将请求转发到对话演示渠道，并将响应返回到此页面。此回复由本地模拟服务生成。`,
+            role: 'assistant', content,
           } }],
-          usage: { prompt_tokens: Math.max(1, Math.ceil(size / 4)), completion_tokens: 23,
-            total_tokens: Math.max(1, Math.ceil(size / 4)) + 23 },
+          usage,
         })
       }
       if (req.url === `/embeddings${embeddings.endpoint}` && body.model === embeddings.name) {

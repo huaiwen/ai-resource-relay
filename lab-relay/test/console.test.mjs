@@ -120,6 +120,26 @@ test('native management console on a fresh isolated instance', { skip: !origin }
     assert.ok(!secondLogs.items.some(item => item.model_name === model))
     assert.equal((await call(origin, '/api/log/', { token: second.token })).data.success, false)
   })
+
+  await t.test('streams simulated chat text and usage through the native gateway', async () => {
+    const response = await fetch(origin + '/v1/chat/completions', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${firstKey.value}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model, messages: [{ role: 'user', content: 'Stream check' }], max_tokens: 100,
+        stream: true, stream_options: { include_usage: true },
+      }),
+    })
+    assert.equal(response.status, 200)
+    assert.match(response.headers.get('content-type') ?? '', /^text\/event-stream\b/)
+    const events = (await response.text()).split(/\r?\n/)
+      .filter(line => line.startsWith('data:')).map(line => line.slice(5).trim())
+    assert.equal(events.at(-1), '[DONE]')
+    const frames = events.slice(0, -1).map(event => JSON.parse(event))
+    const text = frames.flatMap(frame => frame.choices?.map(choice => choice.delta.content ?? '') ?? []).join('')
+    assert.match(text, /本地模拟/)
+    assert.ok(frames.some(frame => frame.usage?.total_tokens > 0))
+  })
 })
 
 test('lab workspace shares native sessions, scopes members and saves branding', { skip: !origin }, async () => {
