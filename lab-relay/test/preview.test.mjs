@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
-import { writeFile } from 'node:fs/promises'
+import { utimes, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import test from 'node:test'
 import { call, management } from '../relay-demo.mjs'
@@ -33,7 +33,14 @@ test('preview starts locked and accepts only the approved browser for initial se
   assert.equal((await submit(cookie)).status, 403)
   assert.equal((await submit()).status, 403)
   assert.equal((await getState()).status, false)
-  await writeFile(join(state, 'setup.approved'), code + '\n', { mode: 0o600, flag: 'wx' })
+  const approvalFile = join(state, 'setup.approved')
+  await writeFile(approvalFile, code + '\n', { mode: 0o600, flag: 'wx' })
+  const expired = new Date(Date.now() - 16 * 60_000)
+  await utimes(approvalFile, expired, expired)
+  assert.equal((await submit(cookie)).status, 403)
+  assert.equal((await getState()).root_init, false)
+  const now = new Date()
+  await utimes(approvalFile, now, now)
   const other = await fetch(url + '/activate-setup')
   assert.equal((await submit(other.headers.get('set-cookie').split(';')[0])).status, 403)
   assert.equal((await submit(cookie, 'https://other.example')).status, 403)
