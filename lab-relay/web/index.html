@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 资源中转站 · 实验室</title>
+  <link rel="stylesheet" href="/demo.css">
+  <script src="/demo.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <span class="brand"><span class="mark" aria-hidden="true">↔</span> 实验室 AI 基础设施</span>
+      <a href="/workspace">返回实验室 AI 工作台</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <p class="eyebrow">LAB INFRASTRUCTURE / AI RELAY</p>
+    <h1>AI 资源中转站</h1>
+    <p class="intro">用一个 OpenAI 兼容接口接入不同模型。无需修改客户端，即可在 New API 中管理上游、路由、密钥和额度。</p>
+    <aside class="notice"><strong>独立试用版</strong><span>请求经过真实 New API 网关，由本地模拟服务响应。未连接 LabHub 或付费模型，请勿输入敏感内容。</span></aside>
+
+    <div class="workspace">
+      <form class="panel" id="demo">
+        <div class="panel-title"><h2>试发请求</h2><code id="endpoint">POST /v1/chat/completions</code></div>
+        <fieldset>
+          <legend>任务类型</legend>
+          <div class="options">
+            <label><input name="mode" type="radio" value="chat" checked> 文本对话</label>
+            <label><input name="mode" type="radio" value="embeddings"> 文本向量</label>
+          </div>
+        </fieldset>
+        <label for="prompt">输入文本</label>
+        <textarea id="prompt" name="prompt" rows="4" maxlength="300" required aria-describedby="counter">用一句话说明 AI 资源中转站的用途。</textarea>
+        <div class="form-footer"><small id="counter">22 / 300</small><button type="submit">发送请求 <span aria-hidden="true">→</span></button></div>
+      </form>
+      <section class="panel output-panel" aria-labelledby="output-heading">
+        <div class="panel-title"><h2 id="output-heading">网关响应</h2><small id="state" class="status" role="status">等待请求</small></div>
+        <pre id="result" aria-live="polite">发送请求后，此处会显示返回结果。</pre>
+        <dl class="metrics">
+          <div><dt>路由</dt><dd id="route">—</dd></div>
+          <div><dt>总令牌数</dt><dd id="tokens">—</dd></div>
+          <div><dt>耗时</dt><dd id="duration">—</dd></div>
+        </dl>
+      </section>
+    </div>
+
+    <section class="integration">
+      <div><h2>正式接入</h2><p>在自托管控制台配置已授权供应商，为 LabHub 后端分配独立中转密钥；成员权限和配额继续由 LabHub 管理。</p></div>
+      <code>LabHub → New API /v1 → 模型供应商</code>
+    </section>
+    <footer>基于 <a href="https://github.com/QuantumNous/new-api">New API</a> · Frontend design and development by New API contributors.</footer>
+  </main>
+</body>
+</html>

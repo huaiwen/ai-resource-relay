@@ -6,6 +6,8 @@
 
 **An AI gateway for models, applications, and agents**
 
+[内蒙古大学多媒体计算实验室 · AI 工作台](./lab-relay/README.md)
+
 <p align="center">
   <a href="./README.zh_CN.md">简体中文</a> |
   <a href="./README.zh_TW.md">繁體中文</a> |
