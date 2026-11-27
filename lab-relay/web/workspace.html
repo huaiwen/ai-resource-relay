@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>实验室 AI 工作台</title>
+  <link rel="icon" href="/immc-logo.png" type="image/png">
+  <link rel="stylesheet" href="/workspace.css">
+  <script src="/workspace.js" type="module"></script>
+</head>
+<body data-mode="native">
+  <a class="skip" href="#content">跳到内容</a>
+  <header class="topbar"><div class="wrap top-inner">
+    <a class="wordmark" href="/workspace">
+      <img id="brand-logo" src="/immc-logo.png" alt="">
+      <span id="brand-name">内蒙古大学多媒体计算实验室</span>
+    </a>
+    <div class="top-actions">
+      <span id="environment" class="badge">New API</span>
+      <button id="logout" hidden class="secondary" type="button">退出</button>
+    </div>
+  </div></header>
+  <main id="content" class="wrap">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">IMMC / AI WORKSPACE</p>
+        <h1>实验室 AI 工作台</h1>
+        <p class="intro">为科研团队统一管理 AI 模型、成员额度与用量。供应商渠道、模型路由和密钥由 New API 提供。</p>
+      </div>
+      <div class="top-actions">
+        <a id="primary-action" class="button" href="/sign-in" target="_blank" rel="noopener">登录 New API</a>
+        <button id="after-sign-in" class="secondary" type="button" hidden>我已登录，刷新</button>
+      </div>
+    </section>
+    <p id="notice" class="notice" role="status">正在载入工作台…</p>
+    <div id="workbench" hidden>
+      <nav class="sections" aria-label="工作台栏目">
+        <a href="#overview">总览</a><a href="#membership">成员与额度</a>
+        <a href="#resources">模型与密钥</a><a href="#branding" id="brand-nav" hidden>品牌设置</a>
+      </nav>
+      <section id="overview" aria-labelledby="overview-heading">
+        <div class="section-title"><h2 id="overview-heading">用量总览</h2>
+          <label id="scope-wrapper" hidden>实验室 <select id="lab-filter"></select></label>
+        </div>
+        <div class="metrics">
+          <article><p>成员</p><strong id="member-count">—</strong><small id="member-detail">当前视图中的账号</small></article>
+          <article><p>剩余额度</p><strong id="balance">—</strong><small>New API 额度单位</small></article>
+          <article><p>累计用量</p><strong id="used">—</strong><small>New API 额度单位</small></article>
+          <article><p>请求次数</p><strong id="requests">—</strong><small>累计已计量请求</small></article>
+        </div>
+      </section>
+      <section class="panel" id="membership" aria-labelledby="membership-heading">
+        <div class="section-title"><div><h2 id="membership-heading">成员与额度</h2>
+          <p id="members-note">以 New API 账号和额度为准。</p></div>
+          <button id="create-lab" class="secondary" type="button" hidden>新增实验室</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th scope="col">成员</th><th scope="col">实验室</th><th scope="col">剩余额度</th><th scope="col">累计用量</th><th scope="col">请求次数</th><th scope="col" id="actions-heading" hidden>操作</th></tr></thead>
+          <tbody id="member-rows"></tbody>
+        </table></div>
+        <a id="users-link" href="/users" hidden>在 New API 创建账号 →</a>
+      </section>
+      <section id="resources" aria-labelledby="resource-heading">
+        <div class="section-title"><h2 id="resource-heading">模型与密钥</h2></div>
+        <div class="resources">
+          <article class="panel"><span class="resource-code">01 / MODEL ACCESS</span><h3>模型接入</h3>
+            <p id="models-copy">通过兼容 OpenAI 的接口使用模型。</p><a id="models-link" href="/channels">供应商与渠道 →</a></article>
+          <article class="panel"><span class="resource-code">02 / API KEYS</span><h3>API 密钥</h3>
+            <p id="keys-copy">在 New API 创建、查看和停用自己的项目密钥。</p><a id="keys-link" href="/keys">打开 API 密钥 →</a></article>
+          <article class="panel"><span class="resource-code">03 / USAGE</span><h3>用量明细</h3>
+            <p>按模型和时间查看请求记录及额度消耗。</p><a id="usage-link" href="/usage-logs">打开用量日志 →</a></article>
+        </div>
+      </section>
+      <section class="panel" id="branding" aria-labelledby="branding-heading" hidden>
+        <div class="section-title"><div><h2 id="branding-heading">品牌设置</h2><p id="branding-note">修改工作台显示的名称和 Logo。</p></div></div>
+        <form id="branding-form">
+          <label>名称<input name="name" maxlength="60" required></label>
+          <label>更换 Logo <span class="hint">PNG、JPEG 或 WebP，最大 256 KB</span>
+            <input name="logo" type="file" accept="image/png,image/jpeg,image/webp">
+          </label>
+          <label class="check"><input type="checkbox" name="clear"> 移除 Logo</label>
+          <button type="submit">保存品牌设置</button>
+          <span id="brand-result" class="result" role="status"></span>
+        </form>
+      </section>
+    </div>
+    <footer>实验室 AI 基础设施 · <a href="https://github.com/QuantumNous/new-api">New API</a> · Frontend design and development by New API contributors.</footer>
+  </main>
+  <dialog id="editor">
+    <form id="editor-form">
+      <h2 id="editor-title"></h2>
+      <label id="lab-name-field" hidden>实验室名称<input name="name" maxlength="60"></label>
+      <label id="lab-code-field" hidden>实验室标识<input name="code" placeholder="research-01" pattern="[a-z][a-z0-9\-]{1,23}"></label>
+      <label id="member-lab-field" hidden>分配到实验室<select name="group"></select></label>
+      <label id="member-quota-field" hidden>剩余额度<input name="balance" type="number" min="0" max="1000000000" step="1"></label>
+      <p id="editor-error" class="result" role="alert"></p>
+      <div class="editor-actions"><button id="cancel-edit" class="secondary" type="button">取消</button>
+        <button type="submit">保存</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

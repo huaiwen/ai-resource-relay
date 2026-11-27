@@ -1,0 +1,57 @@
+name: Lab relay smoke tests
+on:
+  pull_request:
+    paths:
+      - lab-relay/**
+      - .github/workflows/lab-relay-smoke.yml
+  push:
+    branches: [main]
+    paths:
+      - lab-relay/**
+      - .github/workflows/lab-relay-smoke.yml
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: lab-relay
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Test simulated relay
+        run: |
+          ./install-new-api.sh
+          node relay-demo.mjs &
+          demo=$!
+          trap 'kill "$demo" 2>/dev/null || true; wait "$demo" 2>/dev/null || true' EXIT
+          curl --retry 30 --retry-connrefused --retry-delay 1 --fail --silent --show-error http://127.0.0.1:9125/ >/dev/null
+          node --test test/relay.test.mjs
+      - name: Test isolated console and workbench
+        run: |
+          export RELAY_CONSOLE_STATE="$(mktemp -d)"
+          export RELAY_ADMIN_PASSWORD="$(openssl rand -hex 20)"
+          export CONSOLE_URL="http://127.0.0.1:9129"
+          node relay-console.mjs &
+          console=$!
+          trap 'kill "$console" 2>/dev/null || true; wait "$console" 2>/dev/null || true' EXIT
+          curl --retry 45 --retry-connrefused --retry-delay 1 --fail --silent --show-error "$CONSOLE_URL/api/setup" >/dev/null
+          node --test test/console.test.mjs
+      - name: Test owner-approved first setup
+        run: |
+          export RELAY_CONSOLE_STATE="$(mktemp -d)"
+          export RELAY_CONSOLE_PREVIEW=1
+          export RELAY_CONSOLE_PREVIEW_ORIGIN="https://console.example.test"
+          export PREVIEW_TEST_URL="http://127.0.0.1:9129"
+          node relay-console.mjs &
+          console=$!
+          trap 'kill "$console" 2>/dev/null || true; wait "$console" 2>/dev/null || true' EXIT
+          curl --retry 45 --retry-connrefused --retry-delay 1 --fail --silent --show-error "$PREVIEW_TEST_URL/api/setup" >/dev/null
+          node --test test/preview.test.mjs
